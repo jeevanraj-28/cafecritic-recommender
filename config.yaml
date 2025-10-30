@@ -1,0 +1,10 @@
+# Model Config
+hybrid:
+  alpha: 0.7  # SVD weight
+
+svd:
+  n_factors: 20
+  n_epochs: 30
+
+data:
+  path: "data/processed/cafecritic_processed.csv"

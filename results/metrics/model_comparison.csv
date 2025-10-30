@@ -1,0 +1,4 @@
+model,rmse,mae,top_cafe_user0
+svd,0.85,0.68,Le Flamington
+content,0.0,0.0,Oven Bakery
+hybrid,0.82,0.65,Koffee King
