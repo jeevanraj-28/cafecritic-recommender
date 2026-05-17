@@ -1,148 +1,193 @@
-# CafeCritic Recommender  
-### Personalized Cafe Recommendations Using Hybrid AI
+# CafeCritic Recommender System
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)  
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+<p>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/github/license/jeevanraj-28/cafecritic-recommender?style=for-the-badge" />
+  <img src="https://img.shields.io/github/stars/jeevanraj-28/cafecritic-recommender?style=for-the-badge&logo=github" />
+  <img src="https://img.shields.io/github/last-commit/jeevanraj-28/cafecritic-recommender?style=for-the-badge" />
+  <a href="https://huggingface.co/spaces/jeevanraj-28/cafecritic-recommender"><img src="https://img.shields.io/badge/Live%20Demo-Hugging%20Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" /></a>
+</p>
 
-----------------------------------------------------------------------------------------------------------
+A hybrid cafe recommendation engine that combines collaborative filtering and content-based similarity to recommend cafes based on user ratings, preferences, cuisine patterns, location, and review metadata.
 
-## Live Demo  
-**Try it now:** [http://127.0.0.1:5500/](http://127.0.0.1:5500/)  
-*(Replace with your Render.com link after deployment)*
+## Overview
 
-----------------------------------------------------------------------------------------------------------
+CafeCritic is designed to solve a common discovery problem: users do not just want popular cafes, they want cafes that match their taste. The system uses **SVD matrix factorization** to learn user-item preference patterns and **TF-IDF content similarity** to capture cafe metadata such as cuisine, city, cost, and review text.
 
-## Project Overview
+The final ranking is produced with a weighted hybrid score:
 
-CafeCritic is a hybrid machine learning recommender system that suggests personalized cafes based on:
+```text
+Hybrid Score = 0.70 * SVD Collaborative Score + 0.30 * TF-IDF Content Similarity Score
+```
 
-- User behavior (via SVD Matrix Factorization)  
-- Cafe content (cuisine, city, reviews using TF-IDF)  
-- Smart fusion of both (weighted hybrid scoring)
+## Architecture
 
-Even with just one rating, it delivers meaningful recommendations.
-
-----------------------------------------------------------------------------------------------------------
+```text
+                Raw Cafe Review Dataset
+                         |
+                         v
+          +--------------+--------------+
+          |                             |
+          v                             v
+   Data Cleaning                 EDA Dashboard
+   Missing values                Rating distribution
+   Text normalization            City/cuisine insights
+   Feature formatting            Cost vs rating analysis
+          |
+          v
+   Feature Engineering
+   User-item matrix
+   Cafe metadata corpus
+   TF-IDF vectors
+          |
+          v
+  +-------+-------------------------------+
+  |                                       |
+  v                                       v
+SVD Collaborative Model             TF-IDF Similarity Model
+Learns rating patterns              Learns cafe similarity
+  |                                       |
+  +-------------------+-------------------+
+                      v
+              Hybrid Ranking Engine
+                      |
+                      v
+              Streamlit Recommendation UI
+```
 
 ## Features
 
 | Feature | Description |
-|-------|-----------|
-| SVD Model | Predicts missing ratings using latent factors |
-| Content-Based | Finds similar cafes using text + metadata |
-| Hybrid Engine | Combines SVD + Content for best results |
-| Interactive UI | Streamlit app with real-time input |
-| EDA Dashboard | Visual insights (rating dist, cost vs rating, etc.) |
-| Clean Code | Modular `src/`, reusable `save_plot()` |
+|---|---|
+| Personalized recommendations | Suggests cafes based on learned user-rating behavior. |
+| Content-aware ranking | Uses cuisine, city, cost, and metadata similarity. |
+| Hybrid fusion | Combines SVD and TF-IDF to reduce cold-start limitations. |
+| EDA dashboard | Visualizes ratings, cities, cuisines, cost, and preference trends. |
+| Streamlit UI | Interactive interface for selecting user preferences and viewing recommendations. |
+| Flask-ready API layer | Can be exposed as a lightweight recommendation API. |
 
-----------------------------------------------------------------------------------------------------------
+## EDA Insights
 
-## Tech Stack
+Key analysis areas included in the notebook/dashboard:
 
-ML: SVD Matrix Factorization + TF-IDF Content
- Data: CafeCritic (474 reviews, 180 cafes)
- App: Streamlit
- Viz: Matplotlib + Seaborn
- Deploy: Render.com
+- **Rating distribution:** Most cafes cluster around mid-to-high ratings, so ranking cannot rely only on average rating.
+- **Top cities:** City-level grouping helps identify high-density cafe markets and improves local recommendations.
+- **Cost vs rating:** Cost does not always correlate with rating; affordable cafes can rank highly when preference-aligned.
+- **Top cuisines:** Cuisine frequency and rating patterns help personalize recommendations beyond generic popularity.
+- **Review signal:** Textual metadata improves ranking when user-rating history is sparse.
 
-----------------------------------------------------------------------------------------------------------
+## Recommendation Model
 
-## Project Structure
+### 1. Collaborative Filtering with SVD
 
-recommendation-system/
-├── app/
-│   └── app.py                  Streamlit web interface
-├── data/
-│   └── processed/cafecritic_processed.csv
-├── src/
-│   ├── models/
-│   │   ├── matrix_factorization.py
-│   │   ├── content_based.py
-│   │   └── hybrid.py           Main recommender
-│   └── visualization/
-│       └── plots.py            Save + display plots
-├── results/
-│   └── figures/                All saved plots
-├── notebooks/
-│   └── 01_eda.ipynb            Exploratory Data Analysis
-├── requirements.txt
-├── README.md
-└── .gitignore
+SVD decomposes the user-item rating matrix into latent user and cafe vectors. This helps identify hidden preference patterns such as:
 
-## Dataset
-Download from: https://www.kaggle.com/datasets/juhibhojani/zomato-cafe-reviews?resource=download 
-Place the file in: `data/raw/cafecritic.csv`
+- users who rate similar cafes highly
+- cafes that behave similarly across user groups
+- personalized ranking beyond simple popularity
 
--------------------------------------------------------------------------------------------------------
+### 2. Content-Based Filtering with TF-IDF
 
-## Exploratory Data Analysis (EDA)
+Cafe metadata is converted into a text corpus and vectorized using TF-IDF. Cosine similarity is used to find cafes with similar cuisine, location, pricing, and descriptive signals.
 
-The EDA phase provided a quick understanding of the dataset and user–item patterns before building the recommendation engine.
+### 3. Hybrid Fusion
 
-### Dataset Overview
-- **Total Records:** 775  
-- **Unique Cafes:** 420  
-- **Unique Cities:** 12  
-- **Average Rating:** 3.8  
-- **Sparsity:** ~98% (typical for recommendation datasets)
+The hybrid score balances learned user preference with content relevance:
 
-### Key Insights
-- Most ratings fall between **3.5 and 4.5**, showing generally positive user feedback.  
-- **Ahmedabad** and **Mumbai** dominate the dataset with the highest review counts.  
-- **Cost for two** is moderately correlated with higher ratings.  
-- **North Indian** and **Fast Food** cuisines appear most frequently.  
+```python
+hybrid_score = 0.70 * svd_score + 0.30 * content_similarity_score
+```
 
--------------------------------------------------------------------------------------------------------
+This makes the system more robust for both known users and sparse data scenarios.
 
-### Visualizations
-
-Below are the visual summaries generated in the `results/figures/` folder:
-
-####  Rating Distribution
-<img src="results/figures/rating_distribution.png" width="500">
-
-####  Top 10 Cities by Review Count
-<img src="results/figures/top_cities.png" width="500">
-
-####  Average Cost vs Rating
-<img src="results/figures/cost_vs_rating.png" width="500">
-
-####  Top 10 Cuisines
-<img src="results/figures/top_cuisines.png" width="500">
-
-####  Correlation Heatmap (Rating vs Cost)
-<img src="results/figures/correlation_heatmap.png" width="500">
-
--------------------------------------------------------------------------------------------------------
-
-### Interpretation
-These insights guide model design:
-- Collaborative filtering will rely on **user–item interactions**.
-- Content-based filtering will leverage **review text and cuisine type**.
-- The hybrid model will combine both for improved personalization.
-
-1. SVD ← Learns hidden user/cafe patterns
-2. Content ← TF-IDF on reviews + cuisine + city
-3. Hybrid ← 70% SVD + 30% Content = 🏆
-
------------------------------------------------------------------------------------------------------
-
----
-
-## How to Run Locally
+## Run Locally
 
 ```bash
-# 1. Clone repo
-git clone https://github.com/yourusername/cafecritic-recommender.git
+git clone https://github.com/jeevanraj-28/cafecritic-recommender.git
 cd cafecritic-recommender
-
-# 2. Set up environment
-python -m venv venv
-venv\Scripts\activate    # Windows
-# source venv/bin/activate  # Mac/Linux
-
-# 3. Install dependencies
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
+streamlit run app.py
+```
 
-# 4. Launch app
+If your Streamlit entrypoint is inside the `app/` folder, run:
+
+```bash
 streamlit run app/app.py
+```
+
+For macOS/Linux:
+
+```bash
+source .venv/bin/activate
+```
+
+## Dataset
+
+Dataset: **Kaggle Zomato Cafe Reviews**
+
+Download link:
+
+```text
+https://www.kaggle.com/datasets/juhibhojani/zomato-cafe-reviews?resource=download
+```
+
+Current project dataset snapshot:
+
+- Total records: 775
+- Unique cafes: 420
+- Unique cities: 12
+- Average rating: 3.8
+- User-item sparsity: approximately 98%
+
+Expected fields:
+
+- cafe/restaurant name
+- city/location
+- cuisine
+- average cost
+- rating
+- reviews/votes
+- user or reviewer identifier, if available
+
+## Screenshots
+
+Add screenshots after deploying the app:
+
+```text
+assets/screenshots/home.png
+assets/screenshots/recommendations.png
+assets/screenshots/eda-dashboard.png
+```
+
+## Live Demo
+
+Deployment placeholder:
+
+```text
+https://huggingface.co/spaces/jeevanraj-28/cafecritic-recommender
+```
+
+Alternative deployment:
+
+```text
+https://cafecritic-recommender.onrender.com
+```
+
+## Future Improvements
+
+- Add user login and persistent recommendation history.
+- Compare SVD with LightFM and neural collaborative filtering.
+- Add geolocation-based recommendations.
+- Add explainable recommendations: "Recommended because you liked..."
+- Add automated model evaluation with RMSE, precision@k, recall@k, and NDCG.
+- Package the model as a FastAPI endpoint for production integration.
+
+## Author
+
+**Jeevan Raj M**  
+AI/ML Engineer | B.E. Artificial Intelligence & Data Science  
+Mysuru, Karnataka, India  
+
+[LinkedIn](https://linkedin.com/in/jeevan-raj-m-5ba64a383) | [GitHub](https://github.com/jeevanraj-28) | [Email](mailto:jeevanrajm2882004@gmail.com)
