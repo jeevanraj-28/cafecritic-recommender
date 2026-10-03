@@ -1,55 +1,61 @@
-# app/app.py
-import streamlit as st
-import pandas as pd
+"""CafeCritic Streamlit app.
+
+    streamlit run app/app.py
+
+Uses the processed Kaggle data if data/processed/cafecritic_processed.csv
+exists; otherwise the synthetic sample in data/sample/, with a banner saying so.
+"""
 import sys
-import os
+from pathlib import Path
 
-# --------------------------------------------------------------
-# 1. Make the `src` package importable from the app folder
-# --------------------------------------------------------------
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+import pandas as pd
+import streamlit as st
 
-# --------------------------------------------------------------
-# 2. Load the processed data (absolute path)
-# --------------------------------------------------------------
-CSV_PATH = os.path.join(PROJECT_ROOT, "data", "processed", "cafecritic_processed.csv")
-df = pd.read_csv(CSV_PATH)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
-# --------------------------------------------------------------
-# 3. Load the hybrid model (cached so it is built only once)
-# --------------------------------------------------------------
+from src.models.hybrid import HybridRecommender  # noqa: E402
+
+REAL_DATA = PROJECT_ROOT / "data" / "processed" / "cafecritic_processed.csv"
+SAMPLE_DATA = PROJECT_ROOT / "data" / "sample" / "cafes_sample.csv"
+
+st.set_page_config(page_title="CafeCritic", page_icon="☕", layout="centered")
+
+
 @st.cache_resource
-def load_hybrid():
-    from src.models.hybrid import HybridRecommender
-    return HybridRecommender(df)
+def load() -> tuple[HybridRecommender, bool]:
+    using_sample = not REAL_DATA.exists()
+    df = pd.read_csv(SAMPLE_DATA if using_sample else REAL_DATA)
+    return HybridRecommender(df), using_sample
 
-hybrid = load_hybrid()
 
-# --------------------------------------------------------------
-# 4. Streamlit UI
-# --------------------------------------------------------------
-st.title("CafeCritic Recommender")
-st.write("Get personalized cafe recommendations using **Hybrid AI**!")
+hybrid, using_sample = load()
+cafes = hybrid.content.cafes
 
-# Valid user ids are the unique values in the `index` column
-valid_ids = sorted(df["index"].unique())
-max_id = valid_ids[-1]
+st.title("CafeCritic")
+st.write("Pick a cafe you liked. CafeCritic suggests similar cafes, ranked by how similar they are "
+         "(cuisine, city and review text) and how well rated they are.")
+if using_sample:
+    st.info("Running on a small **synthetic** sample (invented cafes). "
+            "See the README to use the real Kaggle data.")
 
-user_id = st.number_input(
-    f"Enter User ID (0–{max_id})",
-    min_value=0,
-    max_value=max_id,
-    value=0,
-    step=1,
-)
+city = st.selectbox("City", sorted(cafes["city"].dropna().unique()))
+names = sorted(cafes.loc[cafes["city"] == city, "name"].unique())
+liked = st.selectbox("A cafe you liked", names)
 
-if st.button("Get Recommendations"):
-    with st.spinner("Thinking…"):
-        try:
-            recs = hybrid.recommend(user_id=user_id, top_n=5)
-            st.success("Done!")
-            st.dataframe(recs, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error: {e}")
+with st.expander("Ranking settings"):
+    alpha = st.slider("Weight on similarity (the rest goes to rating)", 0.0, 1.0, 0.7, 0.05)
+    same_city_only = st.checkbox("Only show cafes in the same city", value=True)
+    top_n = st.slider("Number of recommendations", 3, 10, 5)
+
+if st.button("Recommend", type="primary"):
+    recs = hybrid.recommend(liked, top_n=top_n, alpha=alpha, city=city, same_city_only=same_city_only)
+    if recs.empty:
+        st.warning("No other cafes to recommend with these settings. Try including other cities.")
+    else:
+        st.dataframe(
+            recs.rename(columns={"cafe": "Cafe", "city": "City", "cuisine": "Cuisine", "rating": "Rating",
+                                 "similarity": "Similarity", "hybrid_score": "Score"}),
+            hide_index=True, use_container_width=True,
+        )
+        st.caption(f"Score = {alpha:.2f} x similarity + {1 - alpha:.2f} x rating (rating scaled to 0-1).")

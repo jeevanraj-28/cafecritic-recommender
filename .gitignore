@@ -18,3 +18,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+# Tests / caches
+.pytest_cache/
+*.pyc
