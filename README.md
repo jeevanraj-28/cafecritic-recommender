@@ -7,7 +7,8 @@ The more interesting part of this project is what the data allowed. The first ve
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-TF--IDF-F7931E?logo=scikitlearn&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B?logo=streamlit&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-11_passing-22c55e)
+[![tests](https://github.com/jeevanraj-28/cafecritic-recommender/actions/workflows/tests.yml/badge.svg)](https://github.com/jeevanraj-28/cafecritic-recommender/actions/workflows/tests.yml)
+![License](https://img.shields.io/badge/License-MIT-22c55e)
 
 ---
 
@@ -171,3 +172,5 @@ cafecritic-recommender/
 ## Author
 
 **Jeevan Raj M** · [LinkedIn](https://linkedin.com/in/jeevan-raj-m-5ba64a383) · [GitHub](https://github.com/jeevanraj-28) · [Portfolio](https://jeevanraj-28.github.io)
+
+Licensed under the [MIT License](LICENSE).
