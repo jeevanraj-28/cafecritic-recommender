@@ -1,10 +1,11 @@
-# Model Config
+# Default settings (the app also lets you change alpha and top_n)
 hybrid:
-  alpha: 0.7  # SVD weight
+  alpha: 0.7        # weight on content similarity; (1 - alpha) goes to the cafe's rating
+  top_n: 5
 
-svd:
-  n_factors: 20
-  n_epochs: 30
+content:
+  max_features: 5000
 
 data:
-  path: "data/processed/cafecritic_processed.csv"
+  processed: data/processed/cafecritic_processed.csv
+  sample: data/sample/cafes_sample.csv
